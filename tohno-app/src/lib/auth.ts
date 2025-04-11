@@ -10,6 +10,21 @@ interface StartGGProfile {
   image?: string;
 }
 
+interface ExtendedJWT extends JWT {
+  accessToken?: string;
+  refreshToken?: string;
+  accessTokenExpires?: number;
+  profile?: StartGGProfile;
+}
+
+interface StartGGOAuthProfile {
+  id: string;
+  name: string;
+  email: string;
+  image?: string;
+  [key: string]: unknown;
+}
+
 // start.gg OAuth用のカスタムプロバイダー（仮実装）
 const StartGGProvider = {
   id: 'startgg',
@@ -24,7 +39,7 @@ const StartGGProvider = {
   },
   token: 'https://api.start.gg/oauth/token',
   userinfo: 'https://api.start.gg/gql',
-  profile(profile: StartGGProfile) {
+  profile(profile: StartGGOAuthProfile): StartGGProfile {
     return {
       id: profile.id,
       name: profile.name,
@@ -40,7 +55,7 @@ export const authOptions: NextAuthOptions = {
     StartGGProvider
   ],
   callbacks: {
-    async jwt({ token, account, profile }) {
+    async jwt({ token, account, profile }): Promise<ExtendedJWT> {
       // 初回サインイン時
       if (account && profile) {
         return {
@@ -48,12 +63,12 @@ export const authOptions: NextAuthOptions = {
           accessToken: account.access_token,
           refreshToken: account.refresh_token,
           accessTokenExpires: account.expires_at,
-          profile
+          profile: profile as StartGGProfile
         };
       }
 
       // アクセストークンの有効期限チェック
-      if (Date.now() < (token.accessTokenExpires as number * 1000)) {
+      if (Date.now() < ((token as ExtendedJWT).accessTokenExpires ?? 0) * 1000) {
         return token;
       }
 
@@ -61,10 +76,11 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
+      const extendedToken = token as ExtendedJWT;
       return {
         ...session,
-        user: token.profile as StartGGProfile,
-        accessToken: token.accessToken as string
+        user: extendedToken.profile as StartGGProfile,
+        accessToken: extendedToken.accessToken as string
       };
     }
   },
