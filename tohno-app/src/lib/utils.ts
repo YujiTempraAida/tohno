@@ -81,7 +81,7 @@ export function chunkArray<T>(array: T[], size: number): T[][] {
  */
 export function calculateDoubleEliminationMatches(entrants: number): number {
   // 参加者数が2の累乗でない場合、次の2の累乗に切り上げる
-  const nextPowerOfTwo = Math.pow(2, Math.ceil(Math.log2(entrants)));
+  const actualEntrants = Math.pow(2, Math.ceil(Math.log2(entrants)));
   
   // Winners bracket: n-1
   // Losers bracket: n-2
@@ -89,7 +89,7 @@ export function calculateDoubleEliminationMatches(entrants: number): number {
   // 合計: 2n-2 or 2n-1
   
   // 簡易計算（実際にはもっと複雑）
-  return 2 * entrants - 2;
+  return 2 * actualEntrants - 2;
 }
 
 /**
@@ -129,7 +129,7 @@ export function csvToJson(csv: string, delimiter = ','): Record<string, string>[
  * @param delimiter 区切り文字（デフォルト: ','）
  * @returns CSVデータ
  */
-export function jsonToCsv(json: Record<string, any>[], delimiter = ','): string {
+export function jsonToCsv(json: Record<string, string | number | boolean>[], delimiter = ','): string {
   if (json.length === 0) return '';
   
   const headers = Object.keys(json[0]);
@@ -137,7 +137,7 @@ export function jsonToCsv(json: Record<string, any>[], delimiter = ','): string 
   
   const rows = json.map(obj => {
     return headers.map(header => {
-      const value = obj[header] || '';
+      const value = obj[header] ?? '';
       // 値にデリミタが含まれている場合はダブルクォートで囲む
       return value.toString().includes(delimiter) ? `"${value}"` : value;
     }).join(delimiter);

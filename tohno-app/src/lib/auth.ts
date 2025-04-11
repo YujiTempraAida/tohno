@@ -1,6 +1,14 @@
 // 注意: これは仮実装です。実際のアプリでは、start.ggのOAuth連携を実装する必要があります。
 
 import { NextAuthOptions } from 'next-auth';
+import { JWT } from 'next-auth/jwt';
+
+interface StartGGProfile {
+  id: string;
+  name: string;
+  email: string;
+  image?: string;
+}
 
 // start.gg OAuth用のカスタムプロバイダー（仮実装）
 const StartGGProvider = {
@@ -16,7 +24,7 @@ const StartGGProvider = {
   },
   token: 'https://api.start.gg/oauth/token',
   userinfo: 'https://api.start.gg/gql',
-  profile(profile: any) {
+  profile(profile: StartGGProfile) {
     return {
       id: profile.id,
       name: profile.name,
@@ -28,7 +36,7 @@ const StartGGProvider = {
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    // @ts-ignore - カスタムプロバイダーの型定義が不完全
+    // @ts-expect-error - Custom provider type is not fully compatible with built-in types
     StartGGProvider
   ],
   callbacks: {
@@ -55,7 +63,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       return {
         ...session,
-        user: token.profile as any,
+        user: token.profile as StartGGProfile,
         accessToken: token.accessToken as string
       };
     }

@@ -3,23 +3,25 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
+interface Participant {
+  id: string;
+  name: string;
+  checkedIn: boolean;
+  paid: boolean;
+  venuePass: boolean;
+}
+
 export default function CheckinPage() {
   // 実際のアプリではセッション情報から取得する
   const isLoggedIn = false;
 
   // 仮の参加者データ
-  const [participants, setParticipants] = useState<Array<{
-    id: string;
-    name: string;
-    checkedIn: boolean;
-    paid: boolean;
-    venuePass: boolean;
-  }>>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showImportModal, setShowImportModal] = useState(false);
   const [showScanModal, setShowScanModal] = useState(false);
-  const [selectedParticipant, setSelectedParticipant] = useState<any>(null);
+  const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
 
   // CSVインポート処理（仮実装）
   const handleImportCSV = () => {

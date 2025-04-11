@@ -30,31 +30,62 @@ export default function EstimateTimePage() {
   const calculateTime = () => {
     const { entrants, phases, waves, pools, setups, timePerMatch, progressCount } = formData;
 
-    // 簡易的な計算ロジック（実際にはもっと複雑な計算が必要）
-    const matchesPerPool = Math.ceil(entrants / pools) - 1;
-    const totalMatches = matchesPerPool * pools;
+    // 各フェーズの試合数を計算
+    const matchesPerPhase = [];
+    let remainingEntrants = entrants;
+    
+    for (let i = 0; i < phases; i++) {
+      // プールフェーズ
+      if (i === 0) {
+        const matchesPerPool = Math.ceil(remainingEntrants / pools) - 1;
+        const totalPoolMatches = matchesPerPool * pools;
+        matchesPerPhase.push(totalPoolMatches);
+        remainingEntrants = progressCount;
+      }
+      // 後続フェーズ（ダブルエリミネーション）
+      else {
+        const winnersMatches = Math.ceil(remainingEntrants / 2);
+        const losersMatches = Math.floor(remainingEntrants / 2);
+        matchesPerPhase.push(winnersMatches + losersMatches);
+        remainingEntrants = Math.ceil(remainingEntrants / 2);
+      }
+    }
+
+    // 総試合数
+    const totalMatches = matchesPerPhase.reduce((sum, matches) => sum + matches, 0);
+    
+    // Wave数で分割して並行処理を考慮
+    const matchesPerWave = Math.ceil(totalMatches / waves);
     
     // セットアップ数で割って必要なローテーション数を計算
-    const rotations = Math.ceil(totalMatches / setups);
+    const rotationsPerWave = Math.ceil(matchesPerWave / setups);
+    const totalRotations = rotationsPerWave * waves;
     
     // 総時間（分）
-    const totalTimeMinutes = rotations * timePerMatch;
+    const totalTimeMinutes = totalRotations * timePerMatch;
     
-    // ローテーション詳細（簡易版）
+    // ローテーション詳細
     const rotationDetails = [];
     let remainingMatches = totalMatches;
     let currentRotation = 1;
     
-    while (remainingMatches > 0) {
-      const matchesInRotation = Math.min(remainingMatches, setups);
-      rotationDetails.push(`ローテーション ${currentRotation}: ${matchesInRotation} 試合`);
-      remainingMatches -= matchesInRotation;
-      currentRotation++;
+    for (let wave = 1; wave <= waves; wave++) {
+      const matchesInWave = Math.min(remainingMatches, matchesPerWave);
+      let waveMatches = matchesInWave;
+      
+      while (waveMatches > 0) {
+        const matchesInRotation = Math.min(waveMatches, setups);
+        rotationDetails.push(`Wave ${wave}, ローテーション ${currentRotation}: ${matchesInRotation} 試合`);
+        waveMatches -= matchesInRotation;
+        currentRotation++;
+      }
+      
+      remainingMatches -= matchesInWave;
     }
     
     setResults({
       totalTime: totalTimeMinutes,
-      rotations,
+      rotations: totalRotations,
       rotationDetails,
     });
   };
